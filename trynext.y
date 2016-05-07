@@ -6,36 +6,33 @@
 #include <iostream>
 #include <fstream>
 
-using namespace std;
 
+#define YYPRINT(file, type, value) yyprint(file,type,value)
 #define YYSTYPE char *
 
-extern YYSTYPE yylval;
-
+using namespace std;
+ 
 extern "C"
 {
-        int yyparse(void);
-        int yylex(void);  
+		int yyparse(void);       
+        int yywrap()
+        {
+            return 1;
+        }
+        int yylex() { return getc(stdin); };
+
+        static void yyprint(FILE *file, int type, YYSTYPE value)
+		{
+			printf(" %s", value);
+		}
 }
- 
+
 void yyerror(const char *str)
 {
         fprintf(stderr,"ошибка: %s\n",str);
 }
- 
-int yywrap()
-{
-        return 1;
-} 
   
-main()
-{
-        yyparse();
-} 
-
 %}
-
-
 
 %token DOT SLASH DEF RIGHT LEFT LEFTBRACE RIGHTBRACE STAR SIGN 
 %token WORD NUMBER
@@ -43,18 +40,20 @@ main()
 
 %%
 
+EVALUATE : commands 
+
 commands: 
-    | commands command
+    command | commands command  
     ;
 
 command:
-	create
-	| make
-	| add
-	| header
-	| compare
-	| sort
-	| printinfo
+	| create 
+	| make 
+	| add  
+	| header 
+	| compare  
+	| sort  
+	| printinfo  
 	| copy
 	;
 
@@ -64,7 +63,10 @@ path:
 	;
 
 filename:
-	path DOT WORD		{$$ = strcat($1,strcat($2,$3));}
+	path DOT WORD		
+	{
+		$$ = strcat($1,strcat($2,$3));
+	}
 	;
 
 	//так ведь можно? 
@@ -86,7 +88,7 @@ make:
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $3, ">", myname);
+			int ign = execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $3, ">", myname, NULL);
 		}
 	}
 	| 
@@ -98,7 +100,7 @@ make:
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $2, ">", myname);
+			int ign = execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $2, ">", myname, NULL);
 		}
 	}
 	;
@@ -120,7 +122,7 @@ copy:
 		}
 		else
 		{
-			execlp("cp", "cp", $2, $3);
+			int ign = execlp("cp", "cp", $2, $3, NULL);
 		}
 	}
 	|
@@ -132,12 +134,12 @@ copy:
 		}
 		else
 		{
-			execlp("cp", "cp",  $2, $3);
+			int ign = execlp("cp", "cp",  $2, $3, NULL);
 		}
 	}
 	;
 
-printinfo: 
+printinfo:
 	PRINTINFO filename
 	{
 		cout << "yet too hard :(" << endl;
@@ -160,7 +162,7 @@ compare:
 		}
 		else
 		{
-			execlp("cmp", "smp" , $2, $3);
+			int ign = execlp("cmp", "smp" , $2, $3, NULL);
 		}
 	}
 	;
@@ -175,7 +177,7 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort" , $2);
+			int ign = execlp("sort", "sort" , $2, NULL);
 		}
 	}
 	|
@@ -188,7 +190,7 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort", $2, ">", "$4");
+			int ign = execlp("sort", "sort", $2, ">", "$4", NULL);
 		}
 	}
 	;
