@@ -34,9 +34,10 @@
 %token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE
 
 %%
+EVALUATE: commands {fprintf(stderr, "here!\n");}
 
 commands: 
-    | commands command
+    command {fprintf(stderr, "here!\n");}| commands command 
     ;
 
 command:
@@ -50,13 +51,15 @@ command:
 	| copy
 	;
 
-path:
-	WORD				{$$ = $1;}
-	| WORD SLASH path	{$$ = strcat($1,strcat($2,$3));}
+path:	
+	WORD
+	| WORD SLASH path		{$$ = strcat(strcat($1,"/"), $3);}
+	| SLASH path 			{$$ = strcat("/", $2);}
 	;
 
 filename:
-	path DOT WORD		{$$ = strcat($1,strcat($2,$3));}
+	path DOT WORD		{$$ = strcat($1,strcat(".",$3));}
+	| WOD dot WORD
 	;
 
 	//так ведь можно? 
@@ -64,9 +67,11 @@ filename:
 create:
 	CREATE path filename
 	{
-		char* fname = strcat($2,$3);
+		char* fname = new char(255);
+		fname = strcat($2,$3);
 		std::ofstream creator(fname);
 		if (!creator) {std::cerr << "error opening file!" << endl;}
+		delete(fname);
 	}
 
 make: 
