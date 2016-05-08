@@ -1,38 +1,30 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <iostream>
-#include <fstream>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <string.h>
+	#include <unistd.h>
+	#include <iostream>
+	#include <fstream>
 
-using namespace std;
+    using namespace std;
 
-#define YYSTYPE char *
+    extern int yylineno;
+    extern int yyparse();
+    extern int yylex();
 
-extern YYSTYPE yylval;
+    extern FILE *yyin;
+    void yyerror(const char *s)
+    {
+        std::cerr << s << ", line " << yylineno << std::endl;
+        exit(1);
+    }
 
-extern "C"
-{
-        int yyparse(void);
-        int yylex(void);  
-}
- 
-void yyerror(const char *str)
-{
-        fprintf(stderr,"ошибка: %s\n",str);
-}
- 
-int yywrap()
-{
-        return 1;
-} 
-  
-main()
-{
-        yyparse();
-} 
+    int main()
+    {
+    	yyparse();
+    }
 
+	#define YYSTYPE char *
 %}
 
 
@@ -86,7 +78,7 @@ make:
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $3, ">", myname);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $3, ">", myname, NULL);
 		}
 	}
 	| 
@@ -98,7 +90,7 @@ make:
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $2, ">", myname);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $2, ">", myname, NULL);
 		}
 	}
 	;
@@ -120,7 +112,7 @@ copy:
 		}
 		else
 		{
-			execlp("cp", "cp", $2, $3);
+			execlp("cp", "cp", $2, $3, NULL);
 		}
 	}
 	|
@@ -132,7 +124,7 @@ copy:
 		}
 		else
 		{
-			execlp("cp", "cp",  $2, $3);
+			execlp("cp", "cp",  $2, $3, NULL);
 		}
 	}
 	;
@@ -160,7 +152,7 @@ compare:
 		}
 		else
 		{
-			execlp("cmp", "smp" , $2, $3);
+			execlp("cmp", "smp" , $2, $3, NULL);
 		}
 	}
 	;
@@ -175,7 +167,7 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort" , $2);
+			execlp("sort", "sort" , $2, NULL);
 		}
 	}
 	|
@@ -188,7 +180,7 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort", $2, ">", "$4");
+			execlp("sort", "sort", $2, ">", "$4", NULL);
 		}
 	}
 	;

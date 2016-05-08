@@ -1,8 +1,8 @@
 %{
+#define YYSTYPE char*
+	
 #include <stdio.h>
 #include "trynext.tab.h"
-
-#define YYSTYPE char*
 
 void yyerror(char *s);
 
