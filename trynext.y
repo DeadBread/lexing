@@ -29,40 +29,50 @@
 
 
 
-%token DOT SLASH DEF RIGHT LEFT LEFTBRACE RIGHTBRACE STAR SIGN 
+%token DEF RIGHT LEFT LEFTBRACE RIGHTBRACE STAR SIGN 
 %token WORD NUMBER
 %token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE
 
 %%
-EVALUATE: commands {fprintf(stderr, "here!\n");}
+EVALUATE: commands
 
 commands: 
-    command {fprintf(stderr, "here!\n");}| commands command 
+    command | commands command 
     ;
 
 command:
 	create
 	| make
 	| add
-	| header
+	| header {cout << "in HEADER" << endl;}
 	| compare
 	| sort
 	| printinfo
-	| copy
+	| copy {cout << "in copy" << endl;}
 	;
 
 path:	
-	WORD
-	| WORD SLASH path		{$$ = strcat(strcat($1,"/"), $3);}
-	| SLASH path 			{$$ = strcat("/", $2);}
+	LEFT WORD RIGHT
+		{
+			$$ = $2;
+		}
 	;
+
+star:
+	STAR 
+	{
+		cout << "TO BE!" << endl;
+	}
+
 
 filename:
-	path DOT WORD		{$$ = strcat($1,strcat(".",$3));}
-	| WOD dot WORD
+	star WORD star
+		{
+			printf("in filename\n");
+			$$ = $2;			
+		}
 	;
 
-	//так ведь можно? 
 
 create:
 	CREATE path filename
@@ -73,11 +83,13 @@ create:
 		if (!creator) {std::cerr << "error opening file!" << endl;}
 		delete(fname);
 	}
+	;
 
 make: 
 	MAKE path path filename
 	{
-		char* myname = strcat($4,".m3u");
+		char* myname = new char[255];
+		myname = strcat($4,".m3u");
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
@@ -85,11 +97,13 @@ make:
 		else {
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $3, ">", myname, NULL);
 		}
+		delete (myname);
 	}
 	| 
 	MAKE path filename
 	{
-		char* myname = strcat($3,".m3u");
+		char* myname = new char[255];
+		strcat($3,".m3u");
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
@@ -97,6 +111,7 @@ make:
 		else {
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $2, ">", myname, NULL);
 		}
+		delete(myname);
 	}
 	;
 
@@ -141,10 +156,19 @@ printinfo:
 	}
 	;
 
-header:
-	HEADER WORD
+hs:
+	HEADER
 	{
-		cout <<"not sure I'll do it :C" << endl;
+		printf("not to be!\n");
+	}
+
+header:
+	hs WORD
+	{
+		cout <<"how the fuck did I get here?" << endl;
+		printf("%s", $2);
+		cout << "word is " << $2 << "finish" << endl;
+		cout << "is it&" << endl;
 	}
 	;
 
