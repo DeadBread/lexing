@@ -24,9 +24,36 @@
     	yyparse();
     }
 
+    struct Current_state
+    {
+    	char* file;
+    	char* path;
+
+    	Current_state()
+    	{
+    		file = new char(255);
+    		path = new char(255);
+    	}
+
+    	~Current_state()
+    	{
+    		delete(file);
+    		delete(path);
+    		cout << "deleting current here" << endl;
+    	}
+
+    	void printstates()
+    	{
+    		cout << path << endl << file << endl;
+    	}
+    };
+
+    Current_state cur;
+
 	#define YYSTYPE char *
 %}
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 
@@ -34,22 +61,31 @@
 =======
 %token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN STAR
 >>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
+=======
+%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR
+>>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 %token WORD NUMBER
-%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE
+%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME
 
 %%
+<<<<<<< HEAD
 <<<<<<< HEAD
 EVALUATE: commands
 =======
 EVALUATE: commands {printf("here!\n");} ;
 >>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
+=======
+EVALUATE: commands {getwd(cur.path);} ;
+>>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 
 commands: 
     command | commands command 
     ;
 
 command:
-	  new_cur
+	  goto
+	| new_cur
+	| printcur
 	| create
 	| make
 	| add
@@ -57,7 +93,12 @@ command:
 	| compare
 	| sort
 	| printinfo
+<<<<<<< HEAD
 	| copy {cout << "in copy" << endl;}
+=======
+	| copy
+	| rename
+>>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 	;
 
 path:	
@@ -96,65 +137,91 @@ filename:
 		}
 	;
 
+goto:
+	GOTO path
+		{
+			cur.path = strdup($2);
+		}
+	;
+
 new_cur:
 	SIGN filename
 		{
-			
+			cur.file = strdup($2);
 		}
+	;
+
+printcur:
+	QSIGN
+		{
+			cout << "current directory and file" << endl;
+			cur.printstates();
+		}
+<<<<<<< HEAD
 >>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
+=======
+	;
+>>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 
 create:
-	CREATE path filename
+	CREATE filename
 	{
 		char* fname = new char(255);
-		fname = strcat($2,$3);
+		fname = strcat(cur.path,$2);
 		std::ofstream creator(fname);
 		if (!creator) {std::cerr << "error opening file!" << endl;}
 		cout << "Creation complete!" << endl;
-		//delete(fname);
 	}
 	;
 
 make: 
-	MAKE path path filename
+	MAKE path filename
 	{
+<<<<<<< HEAD
 		char* myname = new char[255];
 		myname = strcat($4,".m3u");
+=======
+>>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $3, ">", myname, NULL);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, ">", $3, NULL);
 		}
 		delete (myname);
 	}
 	| 
-	MAKE path filename
+	MAKE filename
 	{
+<<<<<<< HEAD
 		char* myname = new char[255];
 		strcat($3,".m3u");
+=======
+		char* myname = strcat($2,".m3u");
+>>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, $2, ">", myname, NULL);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, cur.path, ">", myname, NULL);
 		}
 		delete(myname);
 	}
 	;
 
 add:
-	ADD filename filename //where, what
+	ADD filename	//надо изменить, ибо filename - не универсален
 	{
-		std::ofstream adder($2, std::fstream::app);
-		adder << $3 << endl;
+		std::ofstream adder(cur.file, std::fstream::app);
+		cout << $2 << endl;
+		adder.close();
 	}
 	;
 
 copy: 
-	COPY filename path
+	COPY path
 	{
 		if (fork())
 		{
@@ -162,11 +229,11 @@ copy:
 		}
 		else
 		{
-			execlp("rcp", "rcp", "-r", $2, $3, NULL);
+			execlp("rcp", "rcp", "-r", cur.file, $2, NULL);
 		}
 	}
 	|
-	COPY filename filename
+	COPY filename
 	{
 		if (fork())
 		{
@@ -174,13 +241,13 @@ copy:
 		}
 		else
 		{
-			execlp("rcp", "rcp",  $2, $3, NULL);
+			execlp("rcp", "rcp",  cur.file, $2, NULL);
 		}
 	}
 	;
 
 printinfo: 
-	PRINTINFO filename
+	PRINTINFO
 	{
 		cout << "yet too hard :(" << endl;
 	}
@@ -203,7 +270,7 @@ header:
 	;
 
 compare:
-	COMPARE filename filename
+	COMPARE filename
 	{
 		if (fork())
 		{
@@ -211,26 +278,25 @@ compare:
 		}
 		else
 		{
-			execlp("cmp", "cmp" , $2, $3, NULL);
+			execlp("cmp", "cmp" , cur.file, $2, NULL);
 		}
 	}
 	;
 
 sort:
-	SORT filename
+	SORT
 	{
-
 		if (fork())
 		{
 			wait();
 		}
 		else
 		{
-			execlp("sort", "sort" , $2, NULL);
+			execlp("sort", "sort" , cur.file, NULL);
 		}
 	}
 	|
-	SORT filename DEF RIGHTBR filename
+	SORT DEF RIGHTBR filename
 	{
 
 		if (fork())
@@ -239,8 +305,17 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort", $2, ">", "$4", NULL);
+			execlp("sort", "sort", cur.file, ">", "$4", NULL);
 		}
+	}
+	;
+
+rename:
+	RENAME filename
+	{
+		if (rename(cur.file, $2)) printf("it goes wrong");
+		cur.file = $2;
+		cout << "new name is" << $2 << endl;
 	}
 	;
 
