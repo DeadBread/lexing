@@ -27,21 +27,30 @@
 	#define YYSTYPE char *
 %}
 
+<<<<<<< HEAD
 
 
 %token DEF RIGHT LEFT LEFTBRACE RIGHTBRACE STAR SIGN 
+=======
+%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN STAR
+>>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
 %token WORD NUMBER
 %token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE
 
 %%
+<<<<<<< HEAD
 EVALUATE: commands
+=======
+EVALUATE: commands {printf("here!\n");} ;
+>>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
 
 commands: 
     command | commands command 
     ;
 
 command:
-	create
+	  new_cur
+	| create
 	| make
 	| add
 	| header {cout << "in HEADER" << endl;}
@@ -52,9 +61,15 @@ command:
 	;
 
 path:	
+<<<<<<< HEAD
 	LEFT WORD RIGHT
 		{
 			$$ = $2;
+=======
+	LEFTBR WORD RIGHTBR		
+		{
+			$$=$2;
+>>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
 		}
 	;
 
@@ -66,6 +81,7 @@ star:
 
 
 filename:
+<<<<<<< HEAD
 	star WORD star
 		{
 			printf("in filename\n");
@@ -73,6 +89,19 @@ filename:
 		}
 	;
 
+=======
+	STAR WORD STAR
+		{
+			$$=$2;
+		}
+	;
+
+new_cur:
+	SIGN filename
+		{
+			
+		}
+>>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
 
 create:
 	CREATE path filename
@@ -81,7 +110,8 @@ create:
 		fname = strcat($2,$3);
 		std::ofstream creator(fname);
 		if (!creator) {std::cerr << "error opening file!" << endl;}
-		delete(fname);
+		cout << "Creation complete!" << endl;
+		//delete(fname);
 	}
 	;
 
@@ -132,7 +162,7 @@ copy:
 		}
 		else
 		{
-			execlp("cp", "cp", $2, $3, NULL);
+			execlp("rcp", "rcp", "-r", $2, $3, NULL);
 		}
 	}
 	|
@@ -144,7 +174,7 @@ copy:
 		}
 		else
 		{
-			execlp("cp", "cp",  $2, $3, NULL);
+			execlp("rcp", "rcp",  $2, $3, NULL);
 		}
 	}
 	;
@@ -181,7 +211,7 @@ compare:
 		}
 		else
 		{
-			execlp("cmp", "smp" , $2, $3, NULL);
+			execlp("cmp", "cmp" , $2, $3, NULL);
 		}
 	}
 	;
@@ -200,7 +230,7 @@ sort:
 		}
 	}
 	|
-	SORT filename SIGN filename
+	SORT filename DEF RIGHTBR filename
 	{
 
 		if (fork())
