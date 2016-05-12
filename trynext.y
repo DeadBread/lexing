@@ -43,7 +43,6 @@
     	{
     		delete(file);
     		delete(path);
-    		cout << "deleting current here" << endl;
     	}
 
     	void printstates()
@@ -59,12 +58,12 @@
 
 %token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS
 %token WORD NUMBER
-%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME
+%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME LST
 
 %%
 
 evaluate: 
-	commands {cout << "here!" << endl;}
+	commands
 
 commands: 
       command
@@ -84,6 +83,7 @@ command:
 	| printinfo
 	| copy 
 	| rename
+	| list
 	;
 
 path:	
@@ -196,7 +196,7 @@ make:
 		delete(fname);
 		close (fd);
 
-		cur.files = $2;
+		cur.file = $2;
 	}
 	;
 
@@ -298,8 +298,21 @@ rename:
 		cur.file = $2;
 		cout << "new name is" << $2 << endl;
 	}
-	;
+	; 
 
+list:
+	LST
+		{
+			if (fork())
+			{
+				wait();
+			}
+			else
+			{
+				execlp("/home/kardamon/Documents/scripts/lister.sh", "lister.sh", cur.path, NULL);
+			}
+		}
+	;
 %%
 
 

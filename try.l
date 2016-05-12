@@ -36,7 +36,7 @@ void yyerror(char *s);
 [tT][yY][pP][eE][sS][oO][rR][tT]		return TYPESORT;
 [rR][eE][nN][aA][mM][eE]				return RENAME;
 [eE][xX][iI][tT]						return EXIT;
-
+[lL][iI][sS][tT]						return LST;
 
 [a-zA-Z.\/~][a-zA-Z0-9.\/]*		yylval=strdup(yytext); return WORD;
 [0-9]+							yylval=strdup(yytext); return NUMBER;
