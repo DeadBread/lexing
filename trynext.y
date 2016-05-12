@@ -53,30 +53,12 @@
 	#define YYSTYPE char *
 %}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-
-%token DEF RIGHT LEFT LEFTBRACE RIGHTBRACE STAR SIGN 
-=======
-%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN STAR
->>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
-=======
 %token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR
->>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 %token WORD NUMBER
 %token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME
 
 %%
-<<<<<<< HEAD
-<<<<<<< HEAD
-EVALUATE: commands
-=======
-EVALUATE: commands {printf("here!\n");} ;
->>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
-=======
-EVALUATE: commands {getwd(cur.path);} ;
->>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
+EVALUATE: commands {get_current_dir_name();} ;
 
 commands: 
     command | commands command 
@@ -89,48 +71,22 @@ command:
 	| create
 	| make
 	| add
-	| header {cout << "in HEADER" << endl;}
+	| header 
 	| compare
 	| sort
 	| printinfo
-<<<<<<< HEAD
-	| copy {cout << "in copy" << endl;}
-=======
-	| copy
+	| copy 
 	| rename
->>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 	;
 
 path:	
-<<<<<<< HEAD
-	LEFT WORD RIGHT
-		{
-			$$ = $2;
-=======
 	LEFTBR WORD RIGHTBR		
 		{
 			$$=$2;
->>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
 		}
 	;
-
-star:
-	STAR 
-	{
-		cout << "TO BE!" << endl;
-	}
-
 
 filename:
-<<<<<<< HEAD
-	star WORD star
-		{
-			printf("in filename\n");
-			$$ = $2;			
-		}
-	;
-
-=======
 	STAR WORD STAR
 		{
 			$$=$2;
@@ -157,11 +113,8 @@ printcur:
 			cout << "current directory and file" << endl;
 			cur.printstates();
 		}
-<<<<<<< HEAD
->>>>>>> 9c7cb09... fucked-up Makefile bug fixed. Great changes are to come
-=======
+
 	;
->>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 
 create:
 	CREATE filename
@@ -170,6 +123,7 @@ create:
 		fname = strcat(cur.path,$2);
 		std::ofstream creator(fname);
 		if (!creator) {std::cerr << "error opening file!" << endl;}
+		creator.close();
 		cout << "Creation complete!" << endl;
 	}
 	;
@@ -177,11 +131,6 @@ create:
 make: 
 	MAKE path filename
 	{
-<<<<<<< HEAD
-		char* myname = new char[255];
-		myname = strcat($4,".m3u");
-=======
->>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
@@ -189,25 +138,17 @@ make:
 		else {
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, ">", $3, NULL);
 		}
-		delete (myname);
 	}
 	| 
 	MAKE filename
 	{
-<<<<<<< HEAD
-		char* myname = new char[255];
-		strcat($3,".m3u");
-=======
-		char* myname = strcat($2,".m3u");
->>>>>>> d720383... mostly working. Have to debug minor bugs and add some extra features. Already consists working *cur* structure
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, cur.path, ">", myname, NULL);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, cur.path, ">", $2, NULL);
 		}
-		delete(myname);
 	}
 	;
 
@@ -253,19 +194,10 @@ printinfo:
 	}
 	;
 
-hs:
-	HEADER
-	{
-		printf("not to be!\n");
-	}
-
 header:
-	hs WORD
+	HEADER WORD
 	{
-		cout <<"how the fuck did I get here?" << endl;
-		printf("%s", $2);
-		cout << "word is " << $2 << "finish" << endl;
-		cout << "is it&" << endl;
+		cout <<"to be deleted" << endl;
 	}
 	;
 
