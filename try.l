@@ -20,6 +20,7 @@ void yyerror(char *s);
 [*]			return STAR;
 [!]			return SIGN;
 [?]			return QSIGN;
+[+]			return PLUS;
 
 
 [cC][rR][eE][aA][tT][eE]				return CREATE;

@@ -5,6 +5,9 @@
 	#include <unistd.h>
 	#include <iostream>
 	#include <fstream>
+	#include <sys/types.h>
+	#include <sys/stat.h>
+	#include <fcntl.h>
 
     using namespace std;
 
@@ -33,6 +36,7 @@
     	{
     		file = new char(255);
     		path = new char(255);
+    		path = get_current_dir_name();
     	}
 
     	~Current_state()
@@ -53,15 +57,18 @@
 	#define YYSTYPE char *
 %}
 
-%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR
+%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS
 %token WORD NUMBER
 %token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME
 
 %%
-EVALUATE: commands {get_current_dir_name();} ;
+
+evaluate: 
+	commands {cout << "here!" << endl;}
 
 commands: 
-    command | commands command 
+      command
+    | commands command 
     ;
 
 command:
@@ -98,7 +105,12 @@ goto:
 		{
 			cur.path = strdup($2);
 		}
-	;
+	|
+	GOTO PLUS path
+		{
+			cur.path = strcat(cur.path, "/");
+			cur.path = strcat(cur.path, $3);
+		}
 
 new_cur:
 	SIGN filename
@@ -120,43 +132,80 @@ create:
 	CREATE filename
 	{
 		char* fname = new char(255);
-		fname = strcat(cur.path,$2);
-		std::ofstream creator(fname);
-		if (!creator) {std::cerr << "error opening file!" << endl;}
-		creator.close();
-		cout << "Creation complete!" << endl;
+		fname = strcpy(fname, cur.path);
+		fname = strcat(fname,$2);
+		
+		int fd = open(fname,O_RDONLY | O_CREAT | O_TRUNC,0666);
+
+		if (fd) 
+			{
+				std::cerr << "error opening file!" << endl;
+			}
+		else
+		{
+			cur.file = $2;
+			cout << "Creation complete!" << endl;
+		}
+
+		close (fd);
 	}
 	;
 
 make: 
 	MAKE path filename
 	{
+		char* fname = new char[255];
+		fname = strcpy(fname, cur.path);
+		fname = strcat(strcat(fname, "/"), $3);
+
+		int fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC,0666);
+
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, ">", $3, NULL);
+			dup2(fd, 1);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, NULL);
 		}
+
+		delete(fname);
+		close (fd);
+
+		cur.file = $3;
 	}
 	| 
 	MAKE filename
 	{
+
+		char* fname = new char[255];
+		fname = strcpy(fname, cur.path);
+		fname = strcat(strcat(fname, "/"), $2);
+		int fd = open(fname ,O_WRONLY | O_CREAT,0666);
+
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
 		}
 		else {
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, cur.path, ">", $2, NULL);
+
+			dup2(fd, 1);
+			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", cur.path, " " , ">", $2, NULL);
 		}
+
+		delete(fname);
+		close (fd);
+
+		cur.files = $2;
 	}
 	;
 
 add:
 	ADD filename	//надо изменить, ибо filename - не универсален
 	{
+		//вывод здесь сделан потоком, ибо проще. Но надо бы потом переделать
 		std::ofstream adder(cur.file, std::fstream::app);
-		cout << $2 << endl;
+		adder << $2 << endl;
 		adder.close();
 	}
 	;
@@ -224,7 +273,7 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort" , cur.file, NULL);
+			execlp("sort", "sort" , cur.file, ">", cur.file,  NULL);
 		}
 	}
 	|
