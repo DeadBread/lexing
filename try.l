@@ -21,6 +21,7 @@ void yyerror(char *s);
 [!]			return SIGN;
 [?]			return QSIGN;
 [+]			return PLUS;
+[=]			return EQUALS;
 
 
 [cC][rR][eE][aA][tT][eE]				return CREATE;
@@ -37,6 +38,7 @@ void yyerror(char *s);
 [rR][eE][nN][aA][mM][eE]				return RENAME;
 [eE][xX][iI][tT]						return EXIT;
 [lL][iI][sS][tT]						return LST;
+[dD][iI][rR]							return DIR;
 
 [a-zA-Z.\/~][a-zA-Z0-9.\/]*		yylval=strdup(yytext); return WORD;
 [0-9]+							yylval=strdup(yytext); return NUMBER;

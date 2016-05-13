@@ -19,7 +19,8 @@
     void yyerror(const char *s)
     {
         std::cerr << s << ", line " << yylineno << std::endl;
-        exit(1);
+        yyparse();
+        //exit(1);
     }
 
     int main()
@@ -56,9 +57,9 @@
 	#define YYSTYPE char *
 %}
 
-%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS
+%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS EQUALS
 %token WORD NUMBER
-%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME LST
+%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME LST DIR
 
 %%
 
@@ -84,6 +85,8 @@ command:
 	| copy 
 	| rename
 	| list
+	| dir
+	| concat
 	;
 
 path:	
@@ -133,11 +136,12 @@ create:
 	{
 		char* fname = new char(255);
 		fname = strcpy(fname, cur.path);
+		fname = strcat(fname, "/");
 		fname = strcat(fname,$2);
 		
 		int fd = open(fname,O_RDONLY | O_CREAT | O_TRUNC,0666);
 
-		if (fd) 
+		if (fd < 0) 
 			{
 				std::cerr << "error opening file!" << endl;
 			}
@@ -203,10 +207,27 @@ make:
 add:
 	ADD filename	//надо изменить, ибо filename - не универсален
 	{
-		//вывод здесь сделан потоком, ибо проще. Но надо бы потом переделать
-		std::ofstream adder(cur.file, std::fstream::app);
-		adder << $2 << endl;
-		adder.close();
+		//
+		char* tmp = new char[255];
+		tmp = strdup(cur.path);
+		strcat(tmp, "/");
+		strcat(tmp, cur.file);
+
+		int fd = open(tmp, O_CREAT | O_WRONLY | O_APPEND, 0666);
+		cout << tmp << endl;
+		if (fd < 0) 
+		{	
+			cout << "error opening file" << endl;	
+		}
+		else
+		{
+			char* myfname = new char[255];
+			myfname = strdup($1);
+			strcat (myfname, "\n");
+			write(fd, myfname, strlen(myfname));
+		}
+
+		close(fd);
 	}
 	;
 
@@ -313,10 +334,52 @@ list:
 			}
 		}
 	;
+
+dir:
+	DIR
+		{
+			if (fork())
+			{
+				wait();
+			}
+			else
+			{
+				execlp("ls", "ls", cur.path, "-d", "*/" ,NULL);
+			}
+		}
+	;
+
+concat:
+	PLUS EQUALS filename
+		{
+			char* tmp = new char[255];
+			tmp = strdup(cur.path);
+			strcat(tmp, "/");
+			strcat(tmp, cur.file);
+			
+			int fd = open(tmp, O_CREAT | O_APPEND | O_WRONLY, 0666);
+
+			if (fork())
+			{
+				wait();
+			}
+			else
+			{
+				dup2(fd, 1);
+				
+				char* thisfile = new char[255];
+				thisfile = strdup(cur.path);
+				strcat(thisfile, "/");
+				strcat(thisfile, $3);
+				
+				cout << thisfile << endl;
+
+				execlp("cat", "cat", thisfile, NULL);
+			}
+		}
+	;
+
+
 %%
-
-
-
-
 
 
