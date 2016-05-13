@@ -134,14 +134,9 @@ printcur:
 create:
 	CREATE filename
 	{
-		char* fname = new char(255);
-		fname = strcpy(fname, cur.path);
-		fname = strcat(fname, "/");
-		fname = strcat(fname,$2);
-		
 		if (cur.fd > 0) 
 			close (cur.fd);
-		cur.fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC,0666);
+		cur.fd = open($2, O_WRONLY | O_CREAT | O_TRUNC,0666);
 
 		if (cur.fd < 0) 
 			{
@@ -158,14 +153,9 @@ create:
 make: 
 	MAKE path filename
 	{
-		
-		char* fname = new char[255];
-		fname = strcpy(fname, cur.path);
-		fname = strcat(strcat(fname, "/"), $3);
-
 		if (cur.fd > 0) 
 			close (cur.fd);
-		cur.fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC,0666);
+		cur.fd = open($3, O_WRONLY | O_CREAT | O_TRUNC,0666);
 
 		if (fork()) {
 			wait();
@@ -176,21 +166,14 @@ make:
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, NULL);
 		}
 
-		delete(fname);
-
 		cur.file = $3;
 	}
 	| 
 	MAKE filename
 	{
-
-		char* fname = new char[255];
-		fname = strcpy(fname, cur.path);
-		fname = strcat(strcat(fname, "/"), $2);
-
 		if (cur.fd > 0) 
 			close (cur.fd);
-		cur.fd = open(fname ,O_WRONLY | O_CREAT,0666);
+		cur.fd = open($2 ,O_WRONLY | O_CREAT,0666);
 
 		if (fork()) {
 			wait();
@@ -201,8 +184,6 @@ make:
 			dup2(cur.fd, 1);
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", cur.path, " " , ">", $2, NULL);
 		}
-
-		delete(fname);
 
 		cur.file = $2;
 	}
@@ -280,16 +261,11 @@ sort:
 		}
 		else
 		{
-			char* tmp = new char[255];
-			tmp = strdup(cur.path);
-			strcat(tmp, "/");
-			strcat(tmp, cur.file);
-
 			if (cur.fd < 0)
 				close(cur.fd);
-			cur.fd = open(tmp, O_WRONLY, 0666);
+			cur.fd = open(cur.file, O_WRONLY, 0666);
 			dup2(cur.fd, 1);
-			execlp("sort", "sort" , tmp, NULL);
+			execlp("sort", "sort" , cur.file, NULL);
 		}
 	}
 	|
@@ -302,20 +278,11 @@ sort:
 		}
 		else
 		{
-			char*tmpfile = new char[255];
-			tmpfile = strdup(cur.path);
-			strcat(tmpfile, "/");
-			strcat(tmpfile, $4);
-			int fd = open(tmpfile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+			int fd = open($4, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 
 			dup2(fd, 1);
 
-			char* tmp = new char[255];
-			tmp = strdup(cur.path);
-			strcat(tmp, "/");
-			strcat(tmp, cur.file);
-
-			execlp("sort", "sort", tmp, NULL);
+			execlp("sort", "sort", cur.file, NULL);
 		}
 	}
 	;
@@ -327,14 +294,9 @@ rename:
 		if (rename(cur.file, $2)) printf("it goes wrong");
 		cur.file = $2;
 
-		char* tmp = new char[255];
-		tmp = strdup(cur.path);
-		strcat(tmp, "/");
-		strcat(tmp, $2);
-
 		if (cur.fd > 0)
 			close (cur.fd);
-		cur.fd = open(tmp, O_APPEND | O_WRONLY, 0666);
+		cur.fd = open($2, O_APPEND | O_WRONLY, 0666);
 
 		cout << "new name is" << $2 << endl;
 	}
@@ -379,14 +341,7 @@ concat:
 			{
 				dup2(cur.fd, 1);
 				
-				char* thisfile = new char[255];
-				thisfile = strdup(cur.path);
-				strcat(thisfile, "/");
-				strcat(thisfile, $3);
-				
-				cout << thisfile << endl;
-
-				execlp("cat", "cat", thisfile, NULL);
+				execlp("cat", "cat", $3, NULL);
 			}
 		}
 	;
