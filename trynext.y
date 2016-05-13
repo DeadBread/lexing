@@ -32,12 +32,14 @@
     {
     	char* file;
     	char* path;
+    	int fd;
 
     	Current_state()
     	{
-    		file = new char(255);
-    		path = new char(255);
+    		file = new char[255];
+    		path = new char[255];
     		path = get_current_dir_name();
+    		fd = -1;
     	}
 
     	~Current_state()
@@ -106,19 +108,17 @@ filename:
 goto:
 	GOTO path
 		{
-			cur.path = strdup($2);
+			chdir($2);
+			cur.path = get_current_dir_name();
 		}
-	|
-	GOTO PLUS path
-		{
-			cur.path = strcat(cur.path, "/");
-			cur.path = strcat(cur.path, $3);
-		}
+
 
 new_cur:
 	SIGN filename
 		{
-			cur.file = strdup($2);
+			if (cur.fd > 0) 
+				close (cur.fd);
+			cur.fd = open($2, O_WRONLY | O_APPEND, 0666);
 		}
 	;
 
@@ -139,9 +139,11 @@ create:
 		fname = strcat(fname, "/");
 		fname = strcat(fname,$2);
 		
-		int fd = open(fname,O_RDONLY | O_CREAT | O_TRUNC,0666);
+		if (cur.fd > 0) 
+			close (cur.fd);
+		cur.fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC,0666);
 
-		if (fd < 0) 
+		if (cur.fd < 0) 
 			{
 				std::cerr << "error opening file!" << endl;
 			}
@@ -150,31 +152,31 @@ create:
 			cur.file = $2;
 			cout << "Creation complete!" << endl;
 		}
-
-		close (fd);
 	}
 	;
 
 make: 
 	MAKE path filename
 	{
+		
 		char* fname = new char[255];
 		fname = strcpy(fname, cur.path);
 		fname = strcat(strcat(fname, "/"), $3);
 
-		int fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC,0666);
+		if (cur.fd > 0) 
+			close (cur.fd);
+		cur.fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC,0666);
 
 		if (fork()) {
 			wait();
 			cout << "creation complete" << endl;
 		}
 		else {
-			dup2(fd, 1);
+			dup2(cur.fd, 1);
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, NULL);
 		}
 
 		delete(fname);
-		close (fd);
 
 		cur.file = $3;
 	}
@@ -185,7 +187,10 @@ make:
 		char* fname = new char[255];
 		fname = strcpy(fname, cur.path);
 		fname = strcat(strcat(fname, "/"), $2);
-		int fd = open(fname ,O_WRONLY | O_CREAT,0666);
+
+		if (cur.fd > 0) 
+			close (cur.fd);
+		cur.fd = open(fname ,O_WRONLY | O_CREAT,0666);
 
 		if (fork()) {
 			wait();
@@ -193,12 +198,11 @@ make:
 		}
 		else {
 
-			dup2(fd, 1);
+			dup2(cur.fd, 1);
 			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", cur.path, " " , ">", $2, NULL);
 		}
 
 		delete(fname);
-		close (fd);
 
 		cur.file = $2;
 	}
@@ -207,27 +211,9 @@ make:
 add:
 	ADD filename	//надо изменить, ибо filename - не универсален
 	{
-		//
-		char* tmp = new char[255];
-		tmp = strdup(cur.path);
-		strcat(tmp, "/");
-		strcat(tmp, cur.file);
+		strcat($2, "\n");
 
-		int fd = open(tmp, O_CREAT | O_WRONLY | O_APPEND, 0666);
-		cout << tmp << endl;
-		if (fd < 0) 
-		{	
-			cout << "error opening file" << endl;	
-		}
-		else
-		{
-			char* myfname = new char[255];
-			myfname = strdup($1);
-			strcat (myfname, "\n");
-			write(fd, myfname, strlen(myfname));
-		}
-
-		close(fd);
+		write(cur.fd, $2, strlen($2));
 	}
 	;
 
@@ -286,7 +272,7 @@ compare:
 	;
 
 sort:
-	SORT
+	SORT SIGN
 	{
 		if (fork())
 		{
@@ -294,7 +280,16 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort" , cur.file, ">", cur.file,  NULL);
+			char* tmp = new char[255];
+			tmp = strdup(cur.path);
+			strcat(tmp, "/");
+			strcat(tmp, cur.file);
+
+			if (cur.fd < 0)
+				close(cur.fd);
+			cur.fd = open(tmp, O_WRONLY, 0666);
+			dup2(cur.fd, 1);
+			execlp("sort", "sort" , tmp, NULL);
 		}
 	}
 	|
@@ -307,65 +302,82 @@ sort:
 		}
 		else
 		{
-			execlp("sort", "sort", cur.file, ">", "$4", NULL);
+			char*tmpfile = new char[255];
+			tmpfile = strdup(cur.path);
+			strcat(tmpfile, "/");
+			strcat(tmpfile, $4);
+			int fd = open(tmpfile, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+
+			dup2(fd, 1);
+
+			char* tmp = new char[255];
+			tmp = strdup(cur.path);
+			strcat(tmp, "/");
+			strcat(tmp, cur.file);
+
+			execlp("sort", "sort", tmp, NULL);
 		}
 	}
 	;
 
 rename:
 	RENAME filename
-	{
+	{	
+		
 		if (rename(cur.file, $2)) printf("it goes wrong");
 		cur.file = $2;
+
+		char* tmp = new char[255];
+		tmp = strdup(cur.path);
+		strcat(tmp, "/");
+		strcat(tmp, $2);
+
+		if (cur.fd > 0)
+			close (cur.fd);
+		cur.fd = open(tmp, O_APPEND | O_WRONLY, 0666);
+
 		cout << "new name is" << $2 << endl;
 	}
 	; 
 
 list:
 	LST
+	{
+		if (fork())
 		{
-			if (fork())
-			{
-				wait();
-			}
-			else
-			{
-				execlp("/home/kardamon/Documents/scripts/lister.sh", "lister.sh", cur.path, NULL);
-			}
+			wait();
 		}
+		else
+		{
+			execlp("/home/kardamon/Documents/scripts/lister.sh", "lister.sh", cur.path, NULL);
+		}
+	}
 	;
 
 dir:
 	DIR
+	{
+		if (fork())
 		{
-			if (fork())
-			{
-				wait();
-			}
-			else
-			{
-				execlp("ls", "ls", cur.path, "-d", "*/" ,NULL);
-			}
+			wait();
 		}
+		else
+		{
+			execlp("ls", "ls", cur.path, "-d", "*/" ,NULL);
+		}
+	}
 	;
 
 concat:
 	PLUS EQUALS filename
 		{
-			char* tmp = new char[255];
-			tmp = strdup(cur.path);
-			strcat(tmp, "/");
-			strcat(tmp, cur.file);
-			
-			int fd = open(tmp, O_CREAT | O_APPEND | O_WRONLY, 0666);
-
 			if (fork())
 			{
 				wait();
 			}
 			else
 			{
-				dup2(fd, 1);
+				dup2(cur.fd, 1);
 				
 				char* thisfile = new char[255];
 				thisfile = strdup(cur.path);
