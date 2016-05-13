@@ -18,7 +18,10 @@
     extern FILE *yyin;
     void yyerror(const char *s)
     {
-        std::cerr << s << ", line " << yylineno << std::endl;
+    	if (s == NULL)
+    		std::cerr << "syntax error" << ", line " << yylineno << std::endl;
+    	else
+        	std::cerr << s << ", line " << yylineno << std::endl;
         yyparse();
         //exit(1);
     }
@@ -60,8 +63,8 @@
 %}
 
 %token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS EQUALS
-%token WORD NUMBER
-%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME LST DIR
+%token WORD NUMBER STRING
+%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME LST DIR END PRINT
 
 %%
 
@@ -89,6 +92,8 @@ command:
 	| list
 	| dir
 	| concat
+	| print
+	| end
 	;
 
 path:	
@@ -108,8 +113,10 @@ filename:
 goto:
 	GOTO path
 		{
-			chdir($2);
-			cur.path = get_current_dir_name();
+			if (chdir($2) >= 0)
+				cur.path = get_current_dir_name();
+			else 
+				cerr << "wrong directory" << endl;
 		}
 
 
@@ -119,6 +126,9 @@ new_cur:
 			if (cur.fd > 0) 
 				close (cur.fd);
 			cur.fd = open($2, O_WRONLY | O_APPEND, 0666);
+			if (cur.fd < 0)
+				cout << "file not opened!" << endl;
+			cur.file = strdup($2);
 		}
 	;
 
@@ -137,7 +147,6 @@ create:
 		if (cur.fd > 0) 
 			close (cur.fd);
 		cur.fd = open($2, O_WRONLY | O_CREAT | O_TRUNC,0666);
-
 		if (cur.fd < 0) 
 			{
 				std::cerr << "error opening file!" << endl;
@@ -156,17 +165,23 @@ make:
 		if (cur.fd > 0) 
 			close (cur.fd);
 		cur.fd = open($3, O_WRONLY | O_CREAT | O_TRUNC,0666);
+		
+		if (cur.fd < 0)
+			cout << "error opening file" << endl;
+		else
+		{
 
-		if (fork()) {
-			wait();
-			cout << "creation complete" << endl;
-		}
-		else {
-			dup2(cur.fd, 1);
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, NULL);
-		}
+			if (fork()) {
+				wait();
+				cout << "creation complete" << endl;
+			}
+			else {
+				dup2(cur.fd, 1);
+				execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, NULL);
+			}
 
-		cur.file = $3;
+			cur.file = $3;
+		}
 	}
 	| 
 	MAKE filename
@@ -175,26 +190,33 @@ make:
 			close (cur.fd);
 		cur.fd = open($2 ,O_WRONLY | O_CREAT,0666);
 
-		if (fork()) {
-			wait();
-			cout << "creation complete" << endl;
-		}
-		else {
+		if (cur.fd < 0)
+			cout << "error opening file" << endl;
+		else
+		{
+			if (fork()) {
+				wait();
+				cout << "creation complete" << endl;
+			}
+			else {
 
-			dup2(cur.fd, 1);
-			execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", cur.path, " " , ">", $2, NULL);
-		}
+				dup2(cur.fd, 1);
+				execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", cur.path, " " , ">", $2, NULL);
+			}
 
-		cur.file = $2;
+			cur.file = $2;
+		}
 	}
 	;
 
 add:
-	ADD filename	//надо изменить, ибо filename - не универсален
+	ADD STRING	//надо изменить, ибо filename - не универсален
 	{
 		strcat($2, "\n");
-
-		write(cur.fd, $2, strlen($2));
+		if (cur.fd < 0)
+			cout << "no opened file!" << endl;
+		else
+			write(cur.fd, $2, strlen($2));
 	}
 	;
 
@@ -264,8 +286,14 @@ sort:
 			if (cur.fd < 0)
 				close(cur.fd);
 			cur.fd = open(cur.file, O_WRONLY, 0666);
-			dup2(cur.fd, 1);
-			execlp("sort", "sort" , cur.file, NULL);
+			
+			if (cur.fd < 0)
+				cout << "error opening file" << endl;
+			else
+			{
+				dup2(cur.fd, 1);
+				execlp("sort", "sort" , cur.file, NULL);
+			}
 		}
 	}
 	|
@@ -280,9 +308,13 @@ sort:
 		{
 			int fd = open($4, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 
-			dup2(fd, 1);
-
-			execlp("sort", "sort", cur.file, NULL);
+			if (cur.fd < 0)
+				cout << "error opening file" << endl;
+			else
+			{
+				dup2(fd, 1);
+				execlp("sort", "sort", cur.file, NULL);
+			}
 		}
 	}
 	;
@@ -297,6 +329,9 @@ rename:
 		if (cur.fd > 0)
 			close (cur.fd);
 		cur.fd = open($2, O_APPEND | O_WRONLY, 0666);
+		
+		if (cur.fd < 0)
+			cout << "file not opened!" << endl;
 
 		cout << "new name is" << $2 << endl;
 	}
@@ -339,12 +374,32 @@ concat:
 			}
 			else
 			{
-				dup2(cur.fd, 1);
-				
-				execlp("cat", "cat", $3, NULL);
+				if (cur.fd < 0)
+					cout << "no file opened" << endl;
+				else
+				{
+					dup2(cur.fd, 1);
+					execlp("cat", "cat", $3, NULL);
+				}
 			}
 		}
 	;
+
+print:
+	PRINT
+	{
+		if (fork())
+			wait();
+		else
+			execlp("cat", "cat", cur.file, NULL);
+	}
+	;
+
+end:
+	END
+	{
+		return 0;
+	}
 
 
 %%

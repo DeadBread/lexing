@@ -11,6 +11,8 @@ void yyerror(char *s);
 %option yylineno
 %option noyywrap
 
+%x STR
+
 %%
 [-]			return DEF;
 [>]			return RIGHTBR;
@@ -39,8 +41,18 @@ void yyerror(char *s);
 [eE][xX][iI][tT]						return EXIT;
 [lL][iI][sS][tT]						return LST;
 [dD][iI][rR]							return DIR;
+[pP][rR][iI][nN][tT]					return PRINT;
+[eE][nN][dD]							return END;
+
 
 [a-zA-Z.\/~][a-zA-Z0-9.\/]*		yylval=strdup(yytext); return WORD;
 [0-9]+							yylval=strdup(yytext); return NUMBER;
 [ \n]
+
+["]             { yylval = strdup(""); BEGIN(STR); }
+<STR>[^\\\n"]+  yylval = strcat(yylval, yytext);
+<STR>\\n        yylval = strcat(yylval, "\n");
+<STR>\\["]      yylval = strcat(yylval,"\"");
+<STR>["]        { BEGIN(INITIAL); return STRING; }
+
 %%
