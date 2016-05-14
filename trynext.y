@@ -8,6 +8,9 @@
 	#include <sys/types.h>
 	#include <sys/stat.h>
 	#include <fcntl.h>
+	#include <sys/types.h>
+    #include <sys/wait.h>
+
 
     using namespace std;
 
@@ -47,8 +50,8 @@
 
     	~Current_state()
     	{
-    		delete(file);
-    		delete(path);
+    		delete [] file;
+    		delete [] path;
     	}
 
     	void printstates()
@@ -62,9 +65,10 @@
 	#define YYSTYPE char *
 %}
 
+
 %token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS EQUALS
 %token WORD NUMBER STRING
-%token CREATE MAKE ADD ADDALL COPY PRINTINFO HEADER TYPESORT EXIT SORT COMPARE GOTO RENAME LST DIR END PRINT
+%token CREATE MAKE ADD ADDALL COPY EXIT SORT COMPARE GOTO RENAME LST DIR END PRINT
 
 %%
 
@@ -83,10 +87,8 @@ command:
 	| create
 	| make
 	| add
-	| header 
 	| compare
 	| sort
-	| printinfo
 	| copy 
 	| rename
 	| list
@@ -111,7 +113,7 @@ filename:
 	;
 
 goto:
-	GOTO path
+	GOTO STRING
 		{
 			if (chdir($2) >= 0)
 				cur.path = get_current_dir_name();
@@ -160,7 +162,7 @@ create:
 	;
 
 make: 
-	MAKE path filename
+	MAKE STRING filename
 	{
 		if (cur.fd > 0) 
 			close (cur.fd);
@@ -172,12 +174,17 @@ make:
 		{
 
 			if (fork()) {
-				wait();
+				wait(NULL);
 				cout << "creation complete" << endl;
 			}
 			else {
+				//char* tmp = new char[255];
+				//strcat(tmp, "\"");
+				//strcat(tmp, cur.path);
+				//strcat(tmp, "\"");
+
 				dup2(cur.fd, 1);
-				execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", cur.path, $2, NULL);
+				execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.sh", $2, NULL);
 			}
 
 			cur.file = $3;
@@ -190,18 +197,22 @@ make:
 			close (cur.fd);
 		cur.fd = open($2 ,O_WRONLY | O_CREAT,0666);
 
-		if (cur.fd < 0)
+		if (cur.fd < 0) 
 			cout << "error opening file" << endl;
 		else
 		{
 			if (fork()) {
-				wait();
+				wait(NULL);
 				cout << "creation complete" << endl;
 			}
 			else {
+				//char* tmp = new char[255];
+				//strcat(tmp, "\"");
+				//strcat(tmp, cur.path);
+				//strcat(tmp, "\"");
 
 				dup2(cur.fd, 1);
-				execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", cur.path, " " , ">", $2, NULL);
+				execlp("/home/kardamon/Documents/scripts/m3uer.sh", "m3uer.h", NULL);
 			}
 
 			cur.file = $2;
@@ -223,40 +234,37 @@ add:
 copy: 
 	COPY path
 	{
+		if (cur.fd > 0)
+			close(cur.fd);
 		if (fork())
 		{
-			wait();
+			wait(NULL);
+		}
+		else
+		{
+			cout << "here" << endl;
+ 			execlp("rcp", "rcp", "-r", cur.file, $2, NULL);
+		}
+
+		cur.fd = open(cur.file, O_APPEND | O_WRONLY, 0666);
+	}
+	|
+	COPY filename
+	{
+		if (cur.fd > 0)
+			close(cur.fd);
+
+		int pid = fork();
+		if (pid)
+		{
+			wait(NULL);
 		}
 		else
 		{
 			execlp("rcp", "rcp", "-r", cur.file, $2, NULL);
 		}
-	}
-	|
-	COPY filename
-	{
-		if (fork())
-		{
-			wait();
-		}
-		else
-		{
-			execlp("rcp", "rcp",  cur.file, $2, NULL);
-		}
-	}
-	;
 
-printinfo: 
-	PRINTINFO
-	{
-		cout << "yet too hard :(" << endl;
-	}
-	;
-
-header:
-	HEADER WORD
-	{
-		cout <<"to be deleted" << endl;
+		cur.fd = open(cur.file, O_APPEND | O_WRONLY, 0666);
 	}
 	;
 
@@ -265,7 +273,7 @@ compare:
 	{
 		if (fork())
 		{
-			wait();
+			wait(NULL);
 		}
 		else
 		{
@@ -279,7 +287,7 @@ sort:
 	{
 		if (fork())
 		{
-			wait();
+			wait(NULL);
 		}
 		else
 		{
@@ -302,7 +310,7 @@ sort:
 
 		if (fork())
 		{
-			wait();
+			wait(NULL);
 		}
 		else
 		{
@@ -342,7 +350,7 @@ list:
 	{
 		if (fork())
 		{
-			wait();
+			wait(NULL);
 		}
 		else
 		{
@@ -356,7 +364,7 @@ dir:
 	{
 		if (fork())
 		{
-			wait();
+			wait(NULL);
 		}
 		else
 		{
@@ -370,12 +378,19 @@ concat:
 		{
 			if (fork())
 			{
-				wait();
+				wait(NULL);
 			}
 			else
 			{
+				//if (cur.fd > 0)
+				//	close (cur.fd);
+				//cur.fd = open(cur.file, O_WRONLY, O_APPEND, 0666);
+				
 				if (cur.fd < 0)
+				{
 					cout << "no file opened" << endl;
+					exit(0);
+				}
 				else
 				{
 					dup2(cur.fd, 1);
@@ -389,7 +404,7 @@ print:
 	PRINT
 	{
 		if (fork())
-			wait();
+			wait(NULL);
 		else
 			execlp("cat", "cat", cur.file, NULL);
 	}

@@ -32,11 +32,8 @@ void yyerror(char *s);
 [cC][oO][pP][yY]						return COPY;
 [gG][oO][tT][oO]						return GOTO;
 [aA][dD][dD]							return ADD;
-[pP][rR][[iI][nN][tT][iI][nN][fF][oO]	return PRINTINFO;
-[hH][eE][aA][dD][eE][rR]				return HEADER;
 [cC][oO][mM][pP][aA][rR][eE]			return COMPARE;
 [sS][oO][rR][tT]						return SORT;
-[tT][yY][pP][eE][sS][oO][rR][tT]		return TYPESORT;
 [rR][eE][nN][aA][mM][eE]				return RENAME;
 [eE][xX][iI][tT]						return EXIT;
 [lL][iI][sS][tT]						return LST;
@@ -50,9 +47,9 @@ void yyerror(char *s);
 [ \n]
 
 ["]             { yylval = strdup(""); BEGIN(STR); }
-<STR>[^\\\n"]+  yylval = strcat(yylval, yytext);
-<STR>\\n        yylval = strcat(yylval, "\n");
+<STR>[^\\\n"]+  { yylval = (char*)realloc(yylval, 255); strcat(yylval, yytext); }
+<STR>\\n        { yylval = (char*)realloc(yylval, 255); strcat(yylval, yytext); }
 <STR>\\["]      yylval = strcat(yylval,"\"");
-<STR>["]        { BEGIN(INITIAL); return STRING; }
+<STR>["]        {BEGIN(INITIAL); return STRING; }
 
 %%
