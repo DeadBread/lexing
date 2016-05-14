@@ -1,0 +1,8 @@
+Goto "/home/kardamon/life/Amon Tobin"
+make "[2000] - Supermodified" *Supermodified.m3u*
+create *three.m3u*
++= *Bricolage.m3u*
++= *Permutation.m3u*
++= *Supermodified.m3u*
+sort!
+end

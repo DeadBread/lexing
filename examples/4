@@ -1,0 +1,8 @@
+Goto "/home/kardamon/life/Amon Tobin"
+! *Bricolage.m3u*
+copy *Bricolage2.m3u*
+! *Bricolage2.m3u*
+add "[2002] - Out From Out Where/01 Back From Space.m4a"
+add "[2002] - Out From Out Where/02 Verbal (with MC Decimal R).m4a"
+rename *four.m3u*
+end

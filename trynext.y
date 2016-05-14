@@ -25,7 +25,7 @@
     		std::cerr << "syntax error" << ", line " << yylineno << std::endl;
     	else
         	std::cerr << s << ", line " << yylineno << std::endl;
-        yyparse();
+        //yyparse();
         //exit(1);
     }
 
@@ -66,7 +66,7 @@
 %}
 
 
-%token DEF RIGHTBR LEFTBR LEFTBRACE RIGHTBRACE SIGN QSIGN STAR PLUS EQUALS
+%token DEF RIGHTBR LEFTBR SIGN QSIGN STAR PLUS EQUALS
 %token WORD NUMBER STRING
 %token CREATE MAKE ADD ADDALL COPY EXIT SORT COMPARE GOTO RENAME LST DIR END PRINT
 
@@ -242,7 +242,6 @@ copy:
 		}
 		else
 		{
-			cout << "here" << endl;
  			execlp("rcp", "rcp", "-r", cur.file, $2, NULL);
 		}
 
@@ -368,7 +367,7 @@ dir:
 		}
 		else
 		{
-			execlp("ls", "ls", cur.path, "-d", "*/" ,NULL);
+			execlp("dirshower.sh", "dirshower.sh", cur.path, NULL);
 		}
 	}
 	;

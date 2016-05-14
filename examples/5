@@ -1,0 +1,9 @@
+Goto "/home/kardamon/life/Amon Tobin"
+dir
+list
+! *four.m3u*
+print
+?
+compare *Bricolage.m3u*
+copy </home/kardamon/Desktop>
+end

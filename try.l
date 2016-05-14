@@ -17,14 +17,11 @@ void yyerror(char *s);
 [-]			return DEF;
 [>]			return RIGHTBR;
 [<]			return LEFTBR;
-[(]			return LEFTBRACE;
-[)]			return RIGHTBRACE;
 [*]			return STAR;
 [!]			return SIGN;
 [?]			return QSIGN;
 [+]			return PLUS;
 [=]			return EQUALS;
-
 
 [cC][rR][eE][aA][tT][eE]				return CREATE;
 [mM][aA][kK][eE]						return MAKE;
@@ -35,7 +32,6 @@ void yyerror(char *s);
 [cC][oO][mM][pP][aA][rR][eE]			return COMPARE;
 [sS][oO][rR][tT]						return SORT;
 [rR][eE][nN][aA][mM][eE]				return RENAME;
-[eE][xX][iI][tT]						return EXIT;
 [lL][iI][sS][tT]						return LST;
 [dD][iI][rR]							return DIR;
 [pP][rR][iI][nN][tT]					return PRINT;
